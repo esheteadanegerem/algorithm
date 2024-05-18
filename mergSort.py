@@ -1,20 +1,23 @@
 import random
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 def merge_sort(arr):
     """
     Implementation of the merge sort algorithm.
     """
     if len(arr) > 1:
-        mid = len(arr) // 2
-        L = arr[:mid]
+        mid = len(arr) // 2  # Finding the mid of the array
+        L = arr[:mid]  # Dividing the elements into 2 halves
         R = arr[mid:]
 
-        merge_sort(L)
-        merge_sort(R)
+        merge_sort(L)  # Sorting the first half
+        merge_sort(R)  # Sorting the second half
 
         i = j = k = 0
 
+        # Copy data to temporary arrays L[] and R[]
         while i < len(L) and j < len(R):
             if L[i] < R[j]:
                 arr[k] = L[i]
@@ -24,6 +27,7 @@ def merge_sort(arr):
                 j += 1
             k += 1
 
+        # Checking if any element was left
         while i < len(L):
             arr[k] = L[i]
             i += 1
@@ -44,16 +48,13 @@ def generate_array(size, presortedness):
     """
     arr = list(range(size))
     if presortedness == 0:
-        # Reverse the array for minimum presortedness
-        arr.reverse()
+        arr.reverse()  # Reverse the array for minimum presortedness
     elif presortedness == 1:
-        # Already sorted array for maximum presortedness
-        pass
+        pass  # Already sorted array for maximum presortedness
     else:
-        # Shuffle the array for random disorder
-        random.shuffle(arr)
+        random.shuffle(arr)  # Shuffle the array for random disorder
         presorted_elements = int(size * presortedness)
-        arr[:presorted_elements] = sorted(arr[:presorted_elements])
+        arr[:presorted_elements] = sorted(arr[:presorted_elements])  # Partially sort based on presortedness
     return arr
 
 def measure_time(func, *args):
@@ -64,10 +65,10 @@ def measure_time(func, *args):
     :param args: The arguments to pass to the function.
     :return: The time taken in seconds.
     """
-    start = time.time()
-    func(*args)
-    end = time.time()
-    return end - start
+    start = time.time()  # Start time
+    func(*args)  # Execute function
+    end = time.time()  # End time
+    return end - start  # Time taken
 
 def run_tests(values_start, values_stop, steps, presortedness_values, rep):
     """
@@ -78,37 +79,40 @@ def run_tests(values_start, values_stop, steps, presortedness_values, rep):
     :param steps: The number of intervals to divide the size range.
     :param presortedness_values: A list of presortedness levels to test.
     :param rep: The number of repetitions for each test.
-    :return: A list of tuples containing the size, presortedness, and average time taken.
+    :return: A dictionary containing the average time taken for each presortedness level.
     """
-    results = []
-    step_size = (values_stop - values_start) // steps
-    sizes = range(values_start, values_stop + 1, step_size)
+    results = {level: [] for level in presortedness_values}  # Initialize results dictionary
+    step_size = (values_stop - values_start) // steps  # Calculate step size
+    sizes = range(values_start, values_stop + 1, step_size)  # Generate sizes to test
     
     for size in sizes:
         for presortedness in presortedness_values:
             times = []
             for _ in range(rep):
-                arr = generate_array(size, presortedness)
-                arr_copy = arr[:]
-                time_taken = measure_time(merge_sort, arr_copy)
-                times.append(time_taken)
-            avg_time = sum(times) / rep
-            results.append((size, presortedness, avg_time))
-            print(f'Size: {size}, Presortedness: {presortedness}, Avg Time: {avg_time}')
-    return results
+                arr = generate_array(size, presortedness)  # Generate array
+                arr_copy = arr[:]  # Copy array to avoid in-place sorting issues
+                time_taken = measure_time(merge_sort, arr_copy)  # Measure time taken to sort
+                times.append(time_taken)  # Record time
+            avg_time = sum(times) / rep  # Calculate average time
+            results[presortedness].append(avg_time)  # Store average time
+            print(f'Size: {size}, Presortedness: {presortedness}, Avg Time: {avg_time:.5f}')  # Print results
+    
+    # Plot results
+    for presortedness, times in results.items():
+        plt.plot(sizes, times, label=f"Presortedness = {presortedness}")
+
+    plt.xlabel('Array Size')
+    plt.ylabel('Time (seconds)')
+    plt.title('Merge Sort Performance')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 if __name__ == "__main__":
-    # Define parameters
-    values_start = 0  # Minimum number of entries to sort
-    values_stop = 100000  # Maximum number of entries to sort
-    steps = 1000  # Number of intervals
-    presortedness_values = [0, 0.05, 0.5, 1]  # Presortedness levels to test
-    rep = 10  # Number of repetitions for each test
+    values_start = 1000  # Minimum number of entries to sort
+    values_stop = 200000  # Maximum number of entries to sort
+    steps = 20  # Number of intervals
+    presortedness_values = [0, 0.5, 1]  # Presortedness levels to test
+    rep = 5  # Number of repetitions for each test
     
-    # Run the tests and gather results
-    results = run_tests(values_start, values_stop, steps, presortedness_values, rep)
-    
-    # Write results to a file for further analysis
-    with open("merge_sort_results.txt", "w") as f:
-        for result in results:
-            f.write(f"Size: {result[0]}, Presortedness: {result[1]}, Avg Time: {result[2]}\n")
+    run_tests(values_start, values_stop, steps, presortedness_values, rep)  # Run tests
